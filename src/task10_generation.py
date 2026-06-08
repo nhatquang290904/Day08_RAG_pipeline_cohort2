@@ -10,11 +10,15 @@ Hướng dẫn:
 """
 
 import os
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from .task9_retrieval_pipeline import retrieve
+try:
+    from .task9_retrieval_pipeline import retrieve
+except ImportError:
+    from task9_retrieval_pipeline import retrieve
 
 
 # =============================================================================
@@ -32,6 +36,7 @@ TOP_P = 0.9
 # temperature: Độ ngẫu nhiên của output
 # Chọn 0.3 vì: RAG cần factual, ít sáng tạo
 TEMPERATURE = 0.3
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
 
 
 # =============================================================================
@@ -88,7 +93,18 @@ def reorder_for_llm(chunks: list[dict]) -> list[dict]:
     #     reordered.append(chunks[i])  # Even positions go last (reversed)
     #
     # return reordered
-    raise NotImplementedError("Implement reorder_for_llm")
+    if len(chunks) <= 2:
+        return chunks
+
+    reordered = []
+    for i in range(0, len(chunks), 2):
+        reordered.append(chunks[i])
+
+    last_even_index = len(chunks) - 1 if len(chunks) % 2 == 0 else len(chunks) - 2
+    for i in range(last_even_index, 0, -2):
+        reordered.append(chunks[i])
+
+    return reordered
 
 
 # =============================================================================
@@ -117,12 +133,89 @@ def format_context(chunks: list[dict]) -> str:
     #         f"{chunk['content']}\n"
     #     )
     # return "\n---\n".join(context_parts)
-    raise NotImplementedError("Implement format_context")
+    context_parts = []
+    for i, chunk in enumerate(chunks, 1):
+        metadata = chunk.get("metadata", {})
+        source = metadata.get("source", f"source_{i}")
+        doc_type = metadata.get("type", "unknown")
+        score = chunk.get("score", 0.0)
+        context_parts.append(
+            f"[Document {i} | Source: {source} | Type: {doc_type} | Score: {score:.3f}]\n"
+            f"{chunk.get('content', '')}\n"
+        )
+    return "\n---\n".join(context_parts)
 
 
 # =============================================================================
 # GENERATION
 # =============================================================================
+
+def _generate_local_answer(query: str, chunks: list[dict]) -> str:
+    """Create a deterministic citation answer when no LLM API key is available."""
+    if not chunks:
+        return "Tôi không thể xác minh thông tin này từ nguồn hiện có."
+
+    answer_parts = [
+        "Dựa trên các nguồn đã truy xuất, tôi có thể tóm tắt như sau:"
+    ]
+
+    for chunk in chunks[:3]:
+        metadata = chunk.get("metadata", {})
+        source = metadata.get("source", "Nguồn không rõ")
+        content = chunk.get("content", "").strip().replace("\n", " ")
+        if not content:
+            continue
+        snippet = content[:260].rstrip()
+        if len(content) > 260:
+            snippet += "..."
+        answer_parts.append(f"- {snippet} [{source}]")
+
+    if len(answer_parts) == 1:
+        return "Tôi không thể xác minh thông tin này từ nguồn hiện có."
+
+    return "\n".join(answer_parts)
+
+
+def _generate_with_gemini_api(query: str, context: str) -> str:
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        return ""
+
+    endpoint = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{GEMINI_MODEL}:generateContent"
+    )
+    user_message = f"Context:\n{context}\n\n---\n\nQuestion: {query}"
+    response = requests.post(
+        endpoint,
+        params={"key": api_key},
+        json={
+            "system_instruction": {
+                "parts": [{"text": SYSTEM_PROMPT}],
+            },
+            "contents": [
+                {
+                    "role": "user",
+                    "parts": [{"text": user_message}],
+                }
+            ],
+            "generationConfig": {
+                "temperature": TEMPERATURE,
+                "topP": TOP_P,
+            },
+        },
+        timeout=60,
+    )
+    response.raise_for_status()
+    payload = response.json()
+
+    parts = (
+        payload.get("candidates", [{}])[0]
+        .get("content", {})
+        .get("parts", [])
+    )
+    return "\n".join(part.get("text", "") for part in parts).strip()
+
 
 def generate_with_citation(query: str, top_k: int = TOP_K) -> dict:
     """
@@ -182,7 +275,57 @@ def generate_with_citation(query: str, top_k: int = TOP_K) -> dict:
     #     "sources": chunks,
     #     "retrieval_source": chunks[0].get("source", "hybrid") if chunks else "none"
     # }
-    raise NotImplementedError("Implement generate_with_citation")
+    chunks = retrieve(query, top_k=top_k)
+    reordered = reorder_for_llm(chunks)
+    context = format_context(reordered)
+
+    if not chunks:
+        return {
+            "answer": "Tôi không thể xác minh thông tin này từ nguồn hiện có.",
+            "sources": [],
+            "retrieval_source": "none",
+            "context": context,
+            "generation_method": "none",
+        }
+
+    generation_method = "local_fallback"
+    try:
+        answer = _generate_with_gemini_api(query, context)
+        if answer:
+            generation_method = "gemini_api"
+        else:
+            answer = _generate_local_answer(query, reordered)
+    except Exception:
+        answer = _generate_local_answer(query, reordered)
+
+    api_key = os.getenv("OPENAI_API_KEY", "")
+    if generation_method == "local_fallback" and api_key:
+        try:
+            from openai import OpenAI
+
+            client = OpenAI(api_key=api_key)
+            user_message = f"Context:\n{context}\n\n---\n\nQuestion: {query}"
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": user_message},
+                ],
+                temperature=TEMPERATURE,
+                top_p=TOP_P,
+            )
+            answer = response.choices[0].message.content
+            generation_method = "openai_api"
+        except Exception:
+            answer = _generate_local_answer(query, reordered)
+
+    return {
+        "answer": answer,
+        "sources": chunks,
+        "retrieval_source": chunks[0].get("source", "hybrid") if chunks else "none",
+        "context": context,
+        "generation_method": generation_method,
+    }
 
 
 if __name__ == "__main__":

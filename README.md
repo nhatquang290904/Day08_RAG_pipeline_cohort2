@@ -527,8 +527,8 @@ run_dashboard()
 
 | Thành viên | MSSV | Nhiệm vụ | Trạng thái |
 |-----------|------|----------|------------|
-| | | | |
-| | | | |
+| Nguyễn Nhật Quang|2A202600813|| Hoàn thành|
+|| | | |
 | | | | |
 | | | | |
 

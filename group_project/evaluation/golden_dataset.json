@@ -1,17 +1,77 @@
 [
   {
-    "question": "Hình phạt cho tội tàng trữ trái phép chất ma tuý theo Điều 249 Bộ luật Hình sự?",
-    "expected_answer": "Phạt tù từ 1 đến 5 năm đối với trường hợp tàng trữ từ 1g đến dưới 5g heroin hoặc cocaine, hoặc chất ma tuý khác với khối lượng tương đương.",
-    "expected_context": "Bộ luật Hình sự 2015, Điều 249"
+    "question": "Nghị định 105/2021/NĐ-CP quy định về nội dung gì trong phòng chống ma túy?",
+    "expected_answer": "Nghị định 105/2021/NĐ-CP quy định chi tiết và hướng dẫn thi hành một số điều của Luật Phòng, chống ma túy, gồm phối hợp phòng chống tội phạm ma túy, kiểm soát hoạt động hợp pháp liên quan đến ma túy và quản lý người sử dụng trái phép chất ma túy.",
+    "expected_context": "nghi-dinh-105-2021"
   },
   {
-    "question": "Luật Phòng chống ma tuý 2021 quy định những hình thức cai nghiện nào?",
-    "expected_answer": "Cai nghiện tự nguyện tại gia đình, cai nghiện tự nguyện tại cộng đồng, cai nghiện tự nguyện tại cơ sở cai nghiện, và cai nghiện bắt buộc tại cơ sở cai nghiện.",
-    "expected_context": "Luật Phòng chống ma tuý 2021, Chương V"
+    "question": "Đối tượng bị quản lý người sử dụng trái phép chất ma túy là ai?",
+    "expected_answer": "Đối tượng bị quản lý là người có hành vi sử dụng trái phép chất ma túy và không thuộc các trường hợp phải áp dụng biện pháp xử lý khác theo quy định.",
+    "expected_context": "người sử dụng trái phép chất ma túy"
   },
   {
-    "question": "Danh mục các chất ma tuý thuộc nhóm I theo quy định pháp luật Việt Nam gồm những chất nào?",
-    "expected_answer": "Nhóm I gồm các chất ma tuý tuyệt đối cấm sử dụng trong y học và đời sống, bao gồm heroin, cocaine, methamphetamine, MDMA (ecstasy), cannabis (cần sa), và các chất tương tự.",
-    "expected_context": "Nghị định 57/2022/NĐ-CP, Phụ lục I"
+    "question": "Công an cấp xã có vai trò gì trong quản lý người sử dụng trái phép chất ma túy?",
+    "expected_answer": "Công an cấp xã thu thập thông tin, xác minh nơi cư trú, lập hồ sơ và phối hợp quản lý người sử dụng trái phép chất ma túy theo quy định.",
+    "expected_context": "công an cấp xã"
+  },
+  {
+    "question": "Nghị định 116/2021/NĐ-CP liên quan đến nội dung nào?",
+    "expected_answer": "Nghị định 116/2021/NĐ-CP liên quan đến cai nghiện ma túy và quản lý sau cai nghiện ma túy.",
+    "expected_context": "nghi-dinh-116-2021"
+  },
+  {
+    "question": "Nghị định 57/2022/NĐ-CP liên quan đến danh mục gì?",
+    "expected_answer": "Nghị định 57/2022/NĐ-CP liên quan đến danh mục chất ma túy và tiền chất.",
+    "expected_context": "nghi-dinh-57-2022"
+  },
+  {
+    "question": "PageIndex fallback trong pipeline dùng để làm gì?",
+    "expected_answer": "PageIndex fallback được dùng khi kết quả hybrid search không đủ tốt, nhằm truy xuất tài liệu theo hướng vectorless dựa trên cấu trúc tài liệu.",
+    "expected_context": "pageindex"
+  },
+  {
+    "question": "Hybrid retrieval trong Task 9 kết hợp những thành phần nào?",
+    "expected_answer": "Hybrid retrieval kết hợp semantic search, lexical search BM25, merge bằng RRF, reranking và fallback PageIndex nếu điểm thấp.",
+    "expected_context": "semantic search lexical search rerank PageIndex"
+  },
+  {
+    "question": "BM25 trong Task 6 dựa trên những yếu tố nào?",
+    "expected_answer": "BM25 dựa trên term frequency, inverse document frequency và chuẩn hóa độ dài tài liệu.",
+    "expected_context": "BM25 term frequency inverse document frequency"
+  },
+  {
+    "question": "Reranking Task 7 ưu tiên dùng API nào?",
+    "expected_answer": "Task 7 ưu tiên dùng Jina Reranker API với model jina-reranker-v2-base-multilingual, nếu lỗi thì dùng fallback local token overlap.",
+    "expected_context": "Jina Reranker"
+  },
+  {
+    "question": "Task 10 tạo câu trả lời bằng cách nào?",
+    "expected_answer": "Task 10 retrieve context, reorder để tránh lost in the middle, format context có source, sau đó gọi LLM hoặc fallback local để trả lời có citation.",
+    "expected_context": "generation citation reorder context"
+  },
+  {
+    "question": "Những nghệ sĩ nào trong dữ liệu tin tức liên quan đến ma túy?",
+    "expected_answer": "Dữ liệu tin tức nhắc đến các trường hợp như Chi Dân, An Tây và Trúc Phương trong các bài viết liên quan ma túy.",
+    "expected_context": "Chi Dân An Tây Trúc Phương"
+  },
+  {
+    "question": "Tin tức về ma túy trong dataset đến từ những nguồn nào?",
+    "expected_answer": "Dataset tin tức lấy từ các nguồn báo điện tử như Tuổi Trẻ, VTV và một số trang tin khác đã được crawl về dạng JSON/Markdown.",
+    "expected_context": "tuoitre vtv"
+  },
+  {
+    "question": "Chunking trong Task 4 dùng cấu hình nào?",
+    "expected_answer": "Task 4 dùng RecursiveCharacterTextSplitter với chunk_size 500 và chunk_overlap 50.",
+    "expected_context": "chunk_size 500 chunk_overlap 50"
+  },
+  {
+    "question": "Vector store trong Task 4 ưu tiên dịch vụ nào khi có key?",
+    "expected_answer": "Task 4 ưu tiên Weaviate Cloud khi có WEAVIATE_URL và WEAVIATE_API_KEY, đồng thời vẫn giữ local JSON cache.",
+    "expected_context": "Weaviate Cloud local JSON"
+  },
+  {
+    "question": "Chatbot nhóm cần hiển thị những gì ngoài câu trả lời?",
+    "expected_answer": "Chatbot nhóm cần hiển thị source documents đã dùng, điểm score, nguồn retrieval/generation và hỗ trợ conversation memory cho follow-up questions.",
+    "expected_context": "source documents conversation memory"
   }
 ]
